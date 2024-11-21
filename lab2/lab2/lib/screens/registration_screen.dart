@@ -1,69 +1,82 @@
 import 'package:flutter/material.dart';
 import 'package:lab2/data/repositories/user_repoisitory.dart';
 
+
 class RegistrationScreen extends StatefulWidget {
   final UserRepository userRepository;
 
   RegistrationScreen({required this.userRepository});
 
   @override
-  _RegistrationScreenState createState() => _RegistrationScreenState();
+  RegistrationScreenState createState() => RegistrationScreenState();
 }
 
-class _RegistrationScreenState extends State<RegistrationScreen> {
+class RegistrationScreenState extends State<RegistrationScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  void _register() async {
+  Future<void> _register() async {
+    final isConnected = await widget.userRepository.hasInternetConnection();
+    if (!isConnected) {
+      _showDialog('No Internet', 'Please connect to the internet to register.');
+      return;
+    }
+
     if (_formKey.currentState!.validate()) {
       await widget.userRepository.saveUser(
         _emailController.text,
         _passwordController.text,
       );
       if (mounted) {
-      Navigator.pushReplacementNamed(context, '/login');
+        Navigator.pushReplacementNamed(context, '/login');
       }
     }
+  }
+
+  void _showDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pushReplacementNamed(context, '/login');
-          },
-        ),
-      ),
+      appBar: AppBar(title: Text('Register')),
       body: Form(
         key: _formKey,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextFormField(
                 controller: _emailController,
                 validator: (value) =>
                     value != null && value.contains('@') ? null : 'Invalid email',
-                decoration: const InputDecoration(labelText: 'Email'),
+                decoration: InputDecoration(labelText: 'Email'),
               ),
-              const SizedBox(height: 8),
               TextFormField(
                 controller: _passwordController,
                 validator: (value) =>
                     value != null && value.length >= 6 ? null : 'Password too short',
-                decoration: const InputDecoration(labelText: 'Password'),
+                decoration: InputDecoration(labelText: 'Password'),
                 obscureText: true,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _register,
-                child: const Text('Register'),
+                child: Text('Register'),
               ),
             ],
           ),

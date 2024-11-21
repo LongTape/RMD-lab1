@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:lab2/data/repositories/user_repoisitory.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -7,80 +8,110 @@ class ProfileScreen extends StatefulWidget {
   ProfileScreen({required this.userRepository});
 
   @override
-  _ProfileScreenState createState() => _ProfileScreenState();
+  ProfileScreenState createState() => ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  final _emailController = TextEditingController();
-  final _nameController = TextEditingController();
-  final _passwordController = TextEditingController();
+void _showDialog(String title, String message) {
+  var context;
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('OK'),
+        ),
+      ],
+    ),
+  );
+}
+
+class ProfileScreenState extends State<ProfileScreen> {
+  String? email;
+  String? password;
+  final _newPasswordController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _loadUserInfo();
   }
 
-  Future<void> _loadUserData() async {
-    final email = await widget.userRepository.getUserDetail('email') ?? 'No Email';
-    final name = await widget.userRepository.getUserDetail('name') ?? 'No Name';
-    final password =
-        await widget.userRepository.getUserDetail('password') ?? 'No Password';
-
-    setState(() {
-      _emailController.text = email;
-      _nameController.text = name;
-      _passwordController.text = password;
-    });
+  Future<void> _loadUserInfo() async {
+    email = await widget.userRepository.getUserDetail('email');
+    password = await widget.userRepository.getUserDetail('password');
+    setState(() {});
   }
 
-  Future<void> _saveChanges() async {
-    await widget.userRepository.updateUserDetail('name', _nameController.text);
-    await widget.userRepository.updateUserDetail(
-        'password', _passwordController.text);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Changes saved successfully!')),
-    );
+  Future<void> _updatePassword() async {
+  final isConnected = await widget.userRepository.hasInternetConnection();
+  if (!isConnected) {
+    _showDialog('No Internet', 'Please connect to the internet to update your password.');
+    return;
   }
 
-  void _logout() {
-    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+  await widget.userRepository.updateUserDetail('password', _newPasswordController.text);
+  setState(() {
+    password = _newPasswordController.text;
+  });
+}
+
+  Future<void> _logout() async {
+    final confirmed = await _showLogoutDialog();
+    if (confirmed) {
+      await widget.userRepository.updateUserDetail('email', '');
+      await widget.userRepository.updateUserDetail('password', '');
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    }
+  }
+
+  Future<bool> _showLogoutDialog() async {
+    return (await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Log Out'),
+            content: Text('Are you sure you want to log out?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text('Log Out'),
+              ),
+            ],
+          ),
+        )) ??
+        false;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _logout,
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text('Profile')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (email != null) Text('Email: $email'),
             TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-              readOnly: true, // Робимо поле доступним лише для читання
+              controller: _newPasswordController,
+              decoration: InputDecoration(labelText: 'New Password'),
+              obscureText: true,
             ),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
-            ),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-            ),
-            const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _saveChanges,
-              child: const Text('Save Changes'),
+              onPressed: _updatePassword,
+              child: Text('Update Password'),
+            ),
+            ElevatedButton(
+              onPressed: _logout,
+              child: Text('Log Out'),
             ),
           ],
         ),
