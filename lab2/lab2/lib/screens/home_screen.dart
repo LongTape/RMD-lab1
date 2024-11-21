@@ -1,18 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:lab2/widgets/custom_button.dart';
+import 'profile_screen.dart';
+import 'package:lab2/data/repositories/user_repoisitory.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
+  final UserRepository userRepository;
+
+  HomeScreen({required this.userRepository});
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Home')),
       body: Center(
-        child: CustomButton(
-              text: 'profile',
-              onPressed: () {
-                Navigator.pushNamed(context, '/profile');
-              },
-        
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    ProfileScreen(userRepository: widget.userRepository),
+              ),
+            );
+          },
+          child: Text('Go to Profile'),
         ),
       ),
     );
