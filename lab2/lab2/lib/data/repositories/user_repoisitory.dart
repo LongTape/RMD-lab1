@@ -5,7 +5,7 @@ abstract class UserRepository {
   Future<void> saveUser(String email, String password);
   Future<bool> validateUser(String email, String password);
   Future<String?> getUserDetail(String key);
-  Future<void> updateUserDetail(String key, String value);
+  Future<void> updateUserDetail(String key, dynamic value);
   Future<bool> hasInternetConnection();
 }
 
@@ -24,6 +24,9 @@ class SharedPreferencesUserRepository implements UserRepository {
   Future<bool> validateUser(String email, String password) async {
     final storedEmail = _prefs.getString('email');
     final storedPassword = _prefs.getString('password');
+    if (storedEmail == null || storedPassword == null) {
+      return false;
+    }
     return email == storedEmail && password == storedPassword;
   }
 
@@ -33,13 +36,25 @@ class SharedPreferencesUserRepository implements UserRepository {
   }
 
   @override
-  Future<void> updateUserDetail(String key, String value) async {
-    await _prefs.setString(key, value);
+  Future<void> updateUserDetail(String key, dynamic value) async {
+    if (value is String) {
+      await _prefs.setString(key, value);
+    } else if (value is int) {
+      await _prefs.setInt(key, value);
+    } else if (value is bool) {
+      await _prefs.setBool(key, value);
+    } else {
+      throw Exception('Unsupported value type');
+    }
   }
 
   @override
   Future<bool> hasInternetConnection() async {
-    final connectivityResult = await Connectivity().checkConnectivity();
-    return connectivityResult != ConnectivityResult.none;
+    try {
+      final connectivityResult = await Connectivity().checkConnectivity();
+      return connectivityResult != ConnectivityResult.none;
+    } catch (e) {
+      return false;
+    }
   }
 }

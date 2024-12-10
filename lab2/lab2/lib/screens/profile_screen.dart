@@ -11,8 +11,7 @@ class ProfileScreen extends StatefulWidget {
   ProfileScreenState createState() => ProfileScreenState();
 }
 
-void _showDialog(String title, String message) {
-  var context;
+void _showDialog(BuildContext context, String title, String message) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
@@ -48,7 +47,7 @@ class ProfileScreenState extends State<ProfileScreen> {
   Future<void> _updatePassword() async {
   final isConnected = await widget.userRepository.hasInternetConnection();
   if (!isConnected) {
-    _showDialog('No Internet', 'Please connect to the internet to update your password.');
+    _showDialog(context,'No Internet', 'Please connect to the internet to update your password.');
     return;
   }
 
