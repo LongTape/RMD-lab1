@@ -1,43 +1,37 @@
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class WeatherService {
-  final String apiKey = 'b4e16e261b1cfa3b598a5845b2e30b9e';  // Ваш API ключ
+  final String apiKey = 'b4e16e261b1cfa3b598a5845b2e30b9e';
+  final String apiUrl = 'https://api.openweathermap.org/data/2.5/weather';
 
-  // Функція для отримання поточної погоди
-  Future<Map<String, dynamic>> fetchCurrentWeather(String city) async {
-    final url = Uri.parse('https://api.openweathermap.org/data/2.5/weather?q=$city&appid=$apiKey');
-
-    try {
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return {
-          'description': data['weather'][0]['description'],
-          'temperature': data['main']['temp'] - 273.15, // Перетворення Кельвін в Цельсій
-        };
-      } else {
-        throw Exception('Failed to load weather');
-      }
-    } catch (e) {
-      throw Exception('Error fetching weather: $e');
+  Future<Map<String, dynamic>> fetchWeather(String cityName) async {
+    final response = await http.get(Uri.parse('$apiUrl?q=$cityName&appid=$apiKey'));
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to fetch weather data');
     }
   }
 
-  // Функція для отримання прогнозу на тиждень
-  Future<List<dynamic>> fetchWeeklyForecast(String city) async {
-    final url = Uri.parse('https://api.openweathermap.org/data/2.5/forecast?q=$city&appid=$apiKey');
+  Future<Map<String, dynamic>> fetchCurrentWeather(String city) async {
+    // Імітація отримання поточних даних про погоду
+    await Future.delayed(Duration(seconds: 2));
+    return {
+      'temperature': 20,
+      'description': 'Clear sky',
+    };
+  }
 
-    try {
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['list']; // Прогноз на 5 днів (по 3 години)
-      } else {
-        throw Exception('Failed to load weather forecast');
-      }
-    } catch (e) {
-      throw Exception('Error fetching weekly forecast: $e');
-    }
+  Future<List<Map<String, dynamic>>> fetchWeeklyForecast(String city) async {
+    // Імітація отримання даних прогнозу на тиждень
+    await Future.delayed(Duration(seconds: 2));
+    return List.generate(7, (index) {
+      return {
+        'day': 'Day ${index + 1}',
+        'temperature': 20 + index,
+        'description': 'Partly cloudy',
+      };
+    });
   }
 }

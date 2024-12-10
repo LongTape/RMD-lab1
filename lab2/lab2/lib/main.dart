@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lab2/data/repositories/user_repoisitory.dart';
-import 'screens/login_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/registration_screen.dart';
-import 'screens/profile_screen.dart';
+import 'package:lab2/screens/login_screen.dart';
+import 'package:lab2/screens/home_screen.dart';
+import 'package:lab2/screens/profile_screen.dart';
+import 'package:lab2/screens/registration_screen.dart';
+import 'package:lab2/screens/weather_screen.dart';
+import 'package:lab2/logic/auth_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   final prefs = await SharedPreferences.getInstance();
   final userRepository = SharedPreferencesUserRepository(prefs);
 
@@ -20,12 +22,16 @@ void main() async {
       ? await userRepository.validateUser(email, password)
       : false;
 
-
-  runApp(MyApp(
-    userRepository: userRepository,
-    isLoggedIn: isLoggedIn,
-    isConnected: isConnected,
-  ));
+  runApp(
+    BlocProvider(
+      create: (context) => AuthCubit(),
+      child: MyApp(
+        userRepository: userRepository,
+        isLoggedIn: isLoggedIn,
+        isConnected: isConnected,
+      ),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -44,15 +50,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       initialRoute: isLoggedIn ? '/home' : '/login',
-      routes: {
-        '/login': (context) => LoginScreen(
-              userRepository: userRepository,
-              isConnected: isConnected,
-            ),
-        '/home': (context) => HomeScreen(userRepository: userRepository),
-        '/register': (context) => RegistrationScreen(userRepository: userRepository),
-        '/profile': (context) => ProfileScreen(userRepository: userRepository),
-      },
+routes: {
+  '/login': (context) => LoginScreen(userRepository: userRepository),
+  '/home': (context) => HomeScreen(userRepository: userRepository),
+  '/register': (context) => RegisterScreen(userRepository: userRepository),
+  '/weather': (context) => WeatherScreen(),
+  '/profile': (context) => ProfileScreen(userRepository: userRepository),
+},
     );
   }
 }
